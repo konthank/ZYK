@@ -42,14 +42,43 @@ else {
   x1 = D[1]
   xk = D[2]
 }
-T = seq(x1,xk,length=k)
+x = seq(x1,xk,length=k) # x is Tk.
 
 
 for (j in 2:k){
-  z[j] = (h(T[j])-h(T(j-1))-T[j]*hPrime(T[j])+T[j-1]*hPrime(T[j-1]))/(hPrime(T[j-1])-hPrime(T[j])) # x starts from 1 and z starts from 0 so need to adjust index.
-  z[0] = D[1]
+  z[j] = (h(x[j])-h(x(j-1))-x[j]*hPrime(x[j])+x[j-1]*hPrime(x[j-1]))/(hPrime(x[j-1])-hPrime(x[j])) # x starts from 1 and z starts from 0 so need to adjust index.
+  z[1] = D[1]
   z[k+1] = D[2]
 }
+
+# compute u(x)
+u <- function(x){
+  i = 1
+  while (z[i]<x){
+    i = i+1
+  }
+  return (h(x[i-1])+(x-x[i-1])*hPrime(x[i-1]))
+}
+
+library(stats)
+
+s <- function(x) {
+  integrand = function(y) exp(u(y))
+  return(integrand(x)/integrate(integrand, lower=D[1], upper=D[2]))
+}
+
+l <- function(x) {
+  # if  x<x[1] or x>x[k] define l=-Inf
+  if ((x < x[1]) || (x > x[length(x)])){
+    return (-Inf)
+  }
+  # find j such that x in (x[j],x[j+1])
+  while (x[j+1] < x){ 
+    j = j+1
+  }
+  return (((x[j+1]-x)*h(x[j])+(x-x[j])*h(x[j+1]))/(x[j+1]-x[j]))
+}
+
 
 
 
