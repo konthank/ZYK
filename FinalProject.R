@@ -7,11 +7,12 @@
 
 upperBound
 lowerBound
-x = 1:k  # k will be input number of values
-j = 1:(k-1)
 
+
+simulation <-function(g,D,n){
 # input function is g(x) and D, where D the domain D=(lower,upper)
-h = function (x) log((g(x)))  # g will be input density
+# n is the number of samples to generate from g(x)
+h <- function (x) log((g(x)))  # g will be input density
 
 deriv <- function(f,x){ 
   # computes derivative of a given function f at x
@@ -42,46 +43,86 @@ else {
   x1 = D[1]
   xk = D[2]
 }
-x = seq(x1,xk,length=k) # x is Tk.
+T <- seq(x1,xk,length=k) # Tk.
 
 
-for (j in 2:k){
-  z[j] = (h(x[j])-h(x(j-1))-x[j]*hPrime(x[j])+x[j-1]*hPrime(x[j-1]))/(hPrime(x[j-1])-hPrime(x[j])) # x starts from 1 and z starts from 0 so need to adjust index.
+# z_generate is a function that returns the z vector based on equation 1.
+z_generate <- function(x){
+
+ for (j in 2:k){
+  z[j] = (h(T[j])-h(T(j-1))-T[j]*hPrime(T[j])+T[j-1]*hPrime(T[j-1]))/(hPrime(T[j-1])-hPrime(T[j])) # x starts from 1 and z starts from 0 so need to adjust index.
   z[1] = D[1]
   z[k+1] = D[2]
+ }
+return (z)
 }
 
+z=z_generate(T)
 # compute u(x)
-u <- function(x){
+u <- function(x,z,T){
   i = 1
   while (z[i]<x){
     i = i+1
   }
-  return (h(x[i-1])+(x-x[i-1])*hPrime(x[i-1]))
+  return (h(T[i-1])+(x-T[i-1])*hPrime(T[i-1]))
 }
 
 library(stats)
 
-s <- function(x) {
+s <- function(x,u) {
   integrand = function(y) exp(u(y))
   return(integrand(x)/integrate(integrand, lower=D[1], upper=D[2]))
 }
 
-l <- function(x) {
+l <- function(x,T) {
   # if  x<x[1] or x>x[k] define l=-Inf
-  if ((x < x[1]) || (x > x[length(x)])){
+  if ((x < T[1]) || (x > T[length(x)])){
     return (-Inf)
   }
   # find j such that x in (x[j],x[j+1])
-  while (x[j+1] < x){ 
+  while (T[j+1] < x){ 
     j = j+1
   }
-  return (((x[j+1]-x)*h(x[j])+(x-x[j])*h(x[j+1]))/(x[j+1]-x[j]))
+  return (((T[j+1]-x)*h(T[j])+(x-T[j])*h(T[j+1]))/(T[j+1]-T[j]))
 }
 
+# Sampling step and updating step
 
+output=c() # store accepted points
 
+while (length(output)<n){
 
+ # generate xStar from s(x) (not sure how, maybe inversCDF(uniform)?)
+
+ w = runif(1)
+ 
+ # squeezing test
+ if (w<=exp(l(xStar)-u(xStar))){
+   output <- append(output, xStar)
+ }
+ #updating below
+ else{
+   T <- sort(append(T,xStar)) #include xStar in T
+   # rejection test
+   if (w<-exp(h(xStar)-u(xStar))){
+     output <- append(output,xStar)
+   }
+   z <- z_genetate(T)
+   u <- function(x,z,T)
+   s <- function(x,u)
+   l <- function(x,T)
+  }
+}
+
+return(output)
+
+}
+ 
+ 
+ 
+ 
+ 
+ 
 u = h[x] + (x-x[j])*hPrime[x]
 
 s = exp{u[x]}/integrate(u[x], lowerBound, upperBound)
