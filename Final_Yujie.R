@@ -66,36 +66,54 @@ sk <- function(x) { #not sure if we need the input u
 
 ###Need to Modify#################################################
 #
-for (i in 1:length(Tk)) {
-  x1 = z[i]
-  y1 = hz[i]
-  x2 = z[i+1]
-  y2 = hz[i+1]
-  m = (y2-y1) / (x2-x1)
-  b = y1 - m*x1
-  
-  A[i] = exp(y2)/m - exp(y1)/m
+yZ <- rep(NA, k+1) # corresponding y values for Tk
+yZ[1] <- hPrime(TK[1])*z[1] + h(Tk[1]) - hPrime(Tk[1])*Tk[1]
+for (i in 2:k) {
+  slope = hPrime[i]
+  x = Tk[i]
+  y = h(x)
+  yZ[i+1] = slope*z[i+1] + (y - slope*x)
 }
 
+area <- rep(NA, k)
+for (i in 1:length(Tk)) {
+  x = z[i]
+  y = yZ[i]
+  x2 = z[i+1]
+  y2 = yZ[i+1]
+  slope = (y2-y) / (x2-x1)
+  int = y - slope*x
+  
+  area[i] = exp(y2)/slope - exp(y)/slope
+}
+
+sumArea<- sum(area)
 ## Let sumA be the total area under u(x) and ratioA be the cumulative percent area of each piece under u(x)
-sumA = sum(A)
-ratioA = A/sumA
-for (i in 2:length(Tk)) ratioA[i] = ratioA[i] + ratioA[i-1]
+pct = area/sumArea
+cumsumArea <- cumsum(pct)
 
 ## Keep sampling until we accept n values
-num = 0
-while (num < n) {
+size = 0
+while (size < n) {
   ## Calculate xStar, out sample candidate
   u = runif(1)
-  indexA = which(ratioA>u)[1]
-  xStar = sampleExp(z[indexA], hz[indexA], z[indexA+1], hz[indexA+1], A[indexA])
+  j = which(pct <= cumsumArea)[1]
+  if(j > 1){
+    hpj <- hPrime(Tk[j])
+    xStar <- 1/hpj*log(exp(hpj*z[j-1]) + sumArea*(u-cumsumArea[j-1])*hpj*exp(hpj*Tk[j])/exp(h(Tk[1])))  
+  }else{
+    hp1 <- hPrime(Tk[1])
+    xStar <- 1/hp1*log(exp(hp1*lb) + sumArea*u*hp1*exp(hp1*Tk[1])/exp(hp1))
+  }
   
-  ## Calculate xStar evaluated at u(x), uxStar
+#############################################################################################
+  
+  ##???? Calculate xStar evaluated at u(x), uxStar
   um = (hz[indexA+1] - hz[indexA]) / (z[indexA+1] - z[indexA])
   ub = hz[indexA] - um*z[indexA]
   uxStar = um*xStar + ub
   
-  ## Calculate xStar evaluated at l(x), lxStar
+  ##???? Calculate xStar evaluated at l(x), lxStar
   lxStar = 0
   indexTk = which(xStar<Tk)[1]
   if (indexTk == 1 | length(indexTx) == 0) lxStar = 0
@@ -109,8 +127,8 @@ while (num < n) {
   w = runif(1)
   LUratio = exp(lxStar - uxStar)
   if (w <= LUratio) {
-    samps[num+1] = xStar
-    num = num+1
+    samps[size+1] = xStar
+    size = size+1
   }
   ## Otherwise, evaluate h(x), update our vectors, and check to see if we accept xStar
   else {
@@ -136,8 +154,8 @@ while (num < n) {
     
     HUratio = exp(hxStar - uxStar)
     if (w <= HUratio) {
-      samps[num+1] = xStar
-      num = num+1
+      samps[size+1] = xStar
+      size = size+1
     }
   }
 }
